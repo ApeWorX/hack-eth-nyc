@@ -149,32 +149,22 @@ async def on_message(message):
     ape_guild = discord.utils.get(client.guilds, name=APE_GUILD)
     if message.author == client.user:
         return
-    # echos a bug to the targeted channel
-    if message.content.startswith("$bug"):
+        # echos a bug to the targeted channel
         try:
-            await echo(message, eth_guild, ape_guild)
-            logger.info(message)
-        except Exception as err:
-            logger.error(err)
-
-    # send testnet eth to user
-    elif message.content.startswith("$faucet"):
-        try:
-            await faucet(message)
-        except Exception as err:
-            logger.error(err)
-
-    # says hello to the user
-    elif message.content.startswith("$hello"):
-        try:
-            await message.channel.send("Hello")
-        except Exception as err:
-            logger.error(err)
-
-    elif message.guild.name == ETH_GUILD and not message.content.startswith("$bug"):
-        try:
-            await echo(message, eth_guild, ape_guild)
-            logger.info(message)
+            if message.content.startswith("$bug"):
+                await echo(message, eth_guild, ape_guild)
+                logger.info(message)
+            # send testnet eth to user
+            elif message.content.startswith("$faucet"):
+                await faucet(message)
+            # says hello to the user
+            elif message.content.startswith("$hello"):
+                await message.channel.send("Hello")
+            elif message.guild.name == ETH_GUILD and not message.content.startswith(
+                "$bug"
+            ):
+                await echo(message, eth_guild, ape_guild)
+                logger.info(message)
         except Exception as err:
             logger.error(err)
 
