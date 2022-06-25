@@ -13,6 +13,8 @@ from sqlalchemy.sql import text
 
 from logger import logger
 
+from ape import networks
+
 load_dotenv()
 TOKEN = os.getenv("TOKEN")
 APE_GUILD = os.getenv("APE_GUILD")
@@ -160,6 +162,8 @@ async def on_message(message):
             # says hello to the user
             elif message.content.startswith("$hello"):
                 await message.channel.send("Hello")
+            elif message.content.startswith("$gas"):
+                await echo(gas_price(networks))
             elif message.guild.name == ETH_GUILD and not message.content.startswith(
                 "$bug"
             ):
@@ -167,6 +171,11 @@ async def on_message(message):
                 logger.info(message)
         except Exception as err:
             logger.error(err)
+
+
+def gas_price(networks):
+    gas_price = ape.networks.gas_price
+    return gas_price
 
 
 client.run(TOKEN)
