@@ -3,7 +3,6 @@ import time
 from http import client
 from typing import Any
 
-import ape
 import discord
 import pandas as pd
 from dotenv import load_dotenv
@@ -67,7 +66,6 @@ def list_gen(guild):
 
 def get_faucets():
     with Session(engine) as session:
-        breakpoint()
         return pd.read_sql(session.query(Faucet).statement, session.connection())
 
 
@@ -151,23 +149,34 @@ async def on_message(message):
     ape_guild = discord.utils.get(client.guilds, name=APE_GUILD)
     if message.author == client.user:
         return
+    # echos a bug to the targeted channel
+    if message.content.startswith("$bug"):
+        try:
+            await echo(message, eth_guild, ape_guild)
+            logger.info(message)
+        except Exception as err:
+            logger.error(err)
 
-    try:
-        # echos a bug to the targeted channel
-        if message.content.startswith("$bug"):
-            await echo(message, eth_guild, ape_guild)
-            logger.info(message)
-        # send testnet eth to user
-        elif message.content.startswith("$faucet"):
+    # send testnet eth to user
+    elif message.content.startswith("$faucet"):
+        try:
             await faucet(message)
-        # says hello to the user
-        elif message.content.startswith("$hello"):
+        except Exception as err:
+            logger.error(err)
+
+    # says hello to the user
+    elif message.content.startswith("$hello"):
+        try:
             await message.channel.send("Hello")
-        elif message.guild.name == ETH_GUILD and not message.content.startswith("$bug"):
+        except Exception as err:
+            logger.error(err)
+
+    elif message.guild.name == ETH_GUILD and not message.content.startswith("$bug"):
+        try:
             await echo(message, eth_guild, ape_guild)
             logger.info(message)
-    except Exception as err:
-        logger.error(err)
+        except Exception as err:
+            logger.error(err)
 
 
 client.run(TOKEN)
