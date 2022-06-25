@@ -173,9 +173,9 @@ async def on_message(message):
             logger.error(err)
 
 
-def gas_price(networks):
-    gas_price = ape.networks.gas_price
-    return gas_price
+def gas_price(ecosystem_name: str) -> int:
+    with ape.networks.get_ecosystem(ecosystem_name).mainnet.use_default_provider() as provider:
+        return provider.gas_price
 
 
 client.run(TOKEN)
