@@ -49,23 +49,23 @@ Echo will listen to other server and with specfication of channels. It will echo
 
 #### $bug
 $bug will echo a message from the general chat to bugs channel so you can keep track of issues
-Feature improvement: add github actions to automate issue creation of issue
-Feature Improvement: add email tracking to approve issues to create in github
+* Feature improvement: add github actions to automate issue creation of issue
+* Feature Improvement: add email tracking to approve issues to create in github
 
 #### $faucet
 $faucet will prompt the user for a wallet address to send testnet eth so they interact with Ethereum. The bot is connected to a sql db so it can keep track of the discord user id, time they asked for eth, and wallet address. So we can control the amount of testnet eth provided. 
-Feature improvement: verify address
-Feature improvement: specify testnet
-Feature improvement: check for balance and decline balances over X amount
+* Feature improvement: verify address
+* Feature improvement: specify testnet
+* Feature improvement: check for balance and decline balances over X amount
 
 #### $gas
 $gas will check the prices of the gas and relay the information to the user. More importantly it will allow users to automate deployment of contracts, calls, transfers anything that requires eth at the LOWEST gas. 
 
 
-Prints gas price
-Feature improvement: Parameters can be set to find the lowest score and maxim score you will allow for calls. 
-Weekly resets can help the user deploy contracts at the lowest possible gas fee
-It can be ran with ape scripts
+* Prints gas price
+* Feature improvement: Parameters can be set to find the lowest score and maxim score you will allow for calls. 
+* Weekly resets can help the user deploy contracts at the lowest possible gas fee
+* It can be ran with ape scripts
 
 
 
