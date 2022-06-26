@@ -1,2 +1,4 @@
 .env
 test.db
+errorLog.log
+__pycache__
