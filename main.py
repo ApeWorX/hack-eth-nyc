@@ -123,7 +123,6 @@ def send_to_wallet(_wallet_address, _discord_id):
     wallet_address = get_wallet_address(_wallet_address)
     discord_id = get_wallet_address(_discord_id)
     with networks.get_ecosystem("ethereum").local.use_default_provider() as provider:
-        breakpoint()
         TEST_ACCOUNT.transfer(wallet_address, TEST_ACCOUNT.balance - 10**15)
         if not wallet_address or not discord_id:
             message = "You need to wait 24 hours from your last request"
@@ -219,6 +218,22 @@ async def echo(message, eth_guild, ape_guild):
             except Exception as err:
                 logger.error(err)
 
+def get_gas_eth():
+    with networks.get_ecosystem("ethereum").local.use_default_provider() as provider:
+        print("ethereum: " + networks.provider.name + " gas price: " + str(networks.provider.gas_price))
+        logger.info(networks.provider.gas_price)
+
+def get_gas_polygon():
+    with networks.get_ecosystem("polygon").local.use_default_provider() as provider:
+        print("polygon: " + networks.provider.name + " gas price: " + str(networks.provider.gas_price))
+        logger.info(networks.provider.gas_price)
+
+def get_gas_optimism():
+    with networks.get_ecosystem("optimism").local.use_default_provider() as provider:
+        print("optimism: " + networks.provider.name + " gas price: " + str(networks.provider.gas_price))
+        logger.info(networks.provider.gas_price)
+
+
 
 @client.event
 async def on_message(message):
@@ -234,6 +249,15 @@ async def on_message(message):
         # send testnet eth to user
         elif message.content.startswith("$faucet"):
             await faucet(message)
+        elif message.content.startswith("$gas"):
+            try:
+                get_gas_eth()
+                get_gas_polygon()
+                get_gas_optimism()
+            except Exception as err:
+                print(err)
+                logger.error(err)
+                
         # says hello to the user
         elif message.content.startswith("$hello"):
             await message.channel.send("Hello")
@@ -246,8 +270,7 @@ async def on_message(message):
         logger.error(err)
 
 
-def get_gas():
-    pass
+
 
 
 client.run(TOKEN)
