@@ -78,36 +78,38 @@ async def faucet(message):
     discord_id = message.author.id
     date_time = time.time()
     db_obj = Faucet(
-        wallet_address=wallet_address, discord_id=discord_id, time=date_time
+        wallet_address=wallet_address, 
+        discord_id=discord_id, 
+        time=date_time
     )
     with Session(engine) as db:
-        wallet_obj = db.query(Faucet).filter(Faucet.wallet_address == wallet_address).first()
+        wallet_obj = db.query(
+            Faucet).filter(
+            Faucet.wallet_address == wallet_address).first()
         if not wallet_obj:
             db.add(db_obj)
             db.commit()
             db.refresh(db_obj)
-    # TODO: if they do not exist in the database, send to wallet anyway
-    # TODO: send_to_wallet needs to be fixed here
-    send_to_wallet(db_obj.wallet_address)
+    if not wallet_obj:
+        accounts.transfer(TEST_ACCOUNT, wallet_address, 100)
+    else:
+        send_to_wallet(db_obj.wallet_address, db_obj.discord_id)
     return get_faucets()
 
-def get_wallet_address(wallet_address):
-    # TODO: refactor to same function
+
+def get_wallet_address(wallet_identifier):
     with Session(engine) as db:
-        query_wallet = db.query(Faucet).filter(Faucet.wallet_address == wallet_address).first()
+        if isinstance(wallet_identifier, str):
+            query_wallet = db.query(
+                Faucet).filter(
+                Faucet.wallet_address == wallet_address).first()
+        elif isinstance(wallet_identifier, int):
+            query_wallet = db.query(
+                Faucet).filter(
+                Faucet.discord_id == wallet_identifier).first()
         check_available = check_available_to_send(query_wallet)
     if check_available:
         return query_wallet.wallet_address
-    return None
-
-
-def get_user(discord_id):
-    # TODO: refactor to same function
-    with Session(engine) as db:
-        query_user = db.query(Faucet).filter(Faucet.discord_id == discord_id).first()
-        check_available = check_available_to_send(query_user)
-    if check_available:
-        return query_user.discord_id
     return None
 
 
@@ -120,7 +122,7 @@ def check_available_to_send(query):
    
 async def send_to_wallet(wallet_address, discord_id):
     wallet_address = get_wallet_address(wallet_address)
-    discord_id = get_user(discord_id)
+    discord_id = get_wallet_address(discord_id)
     if not wallet_address or not discord_id:
         await message.channel.send("You need to wait 24 hours from your last request")
         #todo: tell user how much time they have to wait more
@@ -128,15 +130,24 @@ async def send_to_wallet(wallet_address, discord_id):
         await message.channel.send("Not enough ETH in faucet")
     elif wallet_address and discord_id:
         accounts.transfer(TEST_ACCOUNT, wallet_address, 100)
-        with Session(engine) as db:
-            query = db.query(Faucet).filter(Faucet.wallet_address == wallet_address).all()
-            for q in query:
-                q.time = time.time()
-                db.add(q)
-                db.commit()
+        update_db_obj(wallet_address, discord_id)
     else:
         await message.channel.send("contact an ape representative, there has been an issue")
-        
+
+
+def update_db_obj(wallet_address, discord_id):
+    with Session(engine) as db:
+        query = db.query(Faucet).filter(Faucet.wallet_address == wallet_address).all()
+        for q in query:
+            q.time = time.time()
+            db.add(q)
+            db.commit()
+        query2 = db.query(Faucet).filter(Faucet.discord_id == discord_id).all()
+        for q in query2:
+            q.time = time.time()
+            db.add(q)
+            db.commit()
+
 
 async def echo(message, eth_guild, ape_guild):
     # send msg to APE from origin
