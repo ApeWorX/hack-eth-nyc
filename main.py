@@ -6,10 +6,10 @@ from typing import Any
 import discord
 import pandas as pd
 from dotenv import load_dotenv
-from sqlalchemy import Column, Integer, String, create_engine
+from sqlalchemy import Column, Integer, String, create_engine, ForeignKey
 from sqlalchemy.ext.declarative import as_declarative, declared_attr
 from sqlalchemy.orm import Session
-from sqlalchemy.sql import text
+from sqlalchemy import or_
 
 from logger import logger
 from ape import accounts, networks
@@ -44,6 +44,32 @@ class Faucet(Base):
     wallet_address = Column(String, index=True)
     discord_id = Column(Integer, index=True)
     time = Column(Integer, index=True)
+
+
+class Transactions(Base):
+    __tablename__ = "transactions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    wallet_address = Column(
+        String,
+        ForeignKey(
+            "faucet_table.wallet_address",
+            ondelete="CASCADE"
+        ),
+        index=True)
+    discord_id = Column(
+        Integer,
+        ForeignKey(
+            "faucet_table.discord_id",
+            ondelete="CASCADE"
+        ),
+        index=True
+    )
+    time = Column(Integer, index=True)
+    amount = Column(Integer, index=True)
+    faucet_balance = Column(Integer, index=True)
+    receiver_balance = Column(Integer, index=True)
+    eth_network = Column(Integer, index=True)
 
 
 Base.metadata.create_all(bind=engine)
@@ -84,13 +110,16 @@ async def faucet(message):
     with Session(engine) as db:
         wallet_obj = db.query(
             Faucet).filter(
-            Faucet.wallet_address == wallet_address).first()
+            or_(
+                Faucet.wallet_address == wallet_address,
+                Faucet.discord_id == discord_id
+            )).first()
         if not wallet_obj:
             db.add(db_obj)
             db.commit()
             db.refresh(db_obj)
     msg = send_to_wallet(db_obj.wallet_address, int(db_obj.discord_id))
-    await(send_message(message,msg))
+    await(send_message(message, msg))
     return get_faucets()
 
 
@@ -118,32 +147,32 @@ def check_available_to_send(query):
     if time_now > last_funded_time + 86400:
         return True
     return False
-   
+
+
 def send_to_wallet(_wallet_address, _discord_id):
     wallet_address = get_wallet_address(_wallet_address)
     discord_id = get_wallet_address(_discord_id)
     with networks.get_ecosystem("ethereum").local.use_default_provider() as provider:
-        breakpoint()
         TEST_ACCOUNT.transfer(wallet_address, TEST_ACCOUNT.balance - 10**15)
         if not wallet_address or not discord_id:
             message = "You need to wait 24 hours from your last request"
-            #todo: tell user how much time they have to wait more
         elif not TEST_ACCOUNT.balance >= 100:
             message = "Not enough ETH in faucet"
         elif wallet_address and discord_id:
             amount = 100
-            TEST_ACCOUNT.transfer(wallet_address, amount)
+            txn = TEST_ACCOUNT.transfer(wallet_address, amount)
             logger.info(f"{TEST_ACCOUNT.balance}: moved 100 wei to {wallet_address}")
             update_db_obj(wallet_address, discord_id)
+            update_transactions_table(txn)
             message = "eth sent"
         else:
             message = "contact an ape representative, there has been an issue"
     return message
 
+
 @client.event
 async def send_message(message, msg):
     await message.channel.send(msg)
-
 
 
 def update_db_obj(wallet_address, discord_id):
@@ -158,6 +187,11 @@ def update_db_obj(wallet_address, discord_id):
             q.time = time.time()
             db.add(q)
             db.commit()
+
+
+def update_transactions_table(txn):
+    with Session(engine) as db:
+        pass
 
 
 async def echo(message, eth_guild, ape_guild):
